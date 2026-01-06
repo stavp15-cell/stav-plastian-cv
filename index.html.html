@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stav Plastian | Interactive Resume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --bot-bubble: #334155;
+            --user-btn: #2563eb;
+            --user-btn-hover: #1d4ed8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 850px;
+            height: 90vh;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .msg {
+            max-width: 90%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .bot-msg { background: var(--bot-bubble); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .user-msg { background: var(--user-btn); align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        .badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin: 3px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .roi-badge {
+            display: block;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border-left: 4px solid var(--accent-green);
+            font-weight: 600;
+        }
+
+        .job-entry { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .job-title { color: #60a5fa; font-weight: 700; font-size: 1.1rem; }
+        .job-meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 10px; font-weight: 600; }
+        .job-bullets { margin-left: 20px; }
+        .job-bullets li { margin-bottom: 6px; }
+
+        #options-container {
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+
+        button {
+            background: var(--user-btn);
+            color: white; border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        button:hover { background: var(--user-btn-hover); transform: translateY(-2px); }
+        button.contact-btn { background: var(--accent-green); }
+        button.secondary { background: #475569; }
+        button.download-btn { background: #6366f1; font-weight: 600; }
+
+        .typing { font-style: italic; color: var(--text-dim); font-size: 0.8rem; padding: 10px 20px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <header>
+        <div class="status-dot"></div>
+        <h1>Stav Plastian | Interactive Resume</h1>
+    </header>
+    <div id="chat-window"></div>
+    <div id="typing-indicator" class="typing" style="display: none;">Stav is typing...</div>
+    <div id="options-container"></div>
+</div>
+
+<script>
+    const chatWindow = document.getElementById('chat-window');
+    const optionsContainer = document.getElementById('options-container');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    const LINKS = {
+        linkedin: "https://linkedin.com/in/stavplastian",
+        email: "mailto:Stavp15@gmail.com",
+        phone: "tel:0544206104",
+        pdf_file: "https://drive.google.com/uc?export=download&id=1XQBBR4cVCgMXfsybTXXj4d_lbLNIkmx6" 
+    };
+
+    const resumeData = {
+        start: {
+            text: "Hi! I'm Stav Plastian. 👋 <br><br>I am a performance-driven MOps professional focused on lifecycle automation and data-driven growth. I specialize in scaling operations through Monday.com workflows and AI-integrated tools to maximize ROAS and creative efficiency. <br><br>What would you like to know more about?",
+            options: [
+                { text: "General Skills", next: "skills" },
+                { text: "Work Experience", next: "experience" },
+                { text: "AI CASE STUDY", next: "casestudy" },
+                { text: "Education & Military", next: "edu_mil" },
+                { text: "📞 Contact Me", next: "contact" },
+                { text: "📄 Download PDF Resume", action: "download" }
+            ]
+        },
+        skills: {
+            text: "<b>Technical Expertise & Skills:</b><br><br>" +
+                  "• <b>Ops & Automation:</b> <span class='badge'>Monday.com Expert</span> <span class='badge'>Zapier</span> <span class='badge'>Workflow Optimization</span><br>" +
+                  "• <b>Data & Performance:</b> <span class='badge'>ROAS Analysis</span> <span class='badge'>Meta Ads</span> <span class='badge'>GTM</span> <span class='badge'>GA4</span><br>" +
+                  "• <b>Innovation:</b> <span class='badge'>GenAI Tools</span> <span class='badge'>Gemini Gems</span> <span class='badge'>Creative Insights Automation</span>",
+            options: []
+        },
+        experience: {
+            text: `
+                <div class="job-entry">
+                    <div class="job-title">Lime Digital - Client Leader & Marketing Operations</div>
+                    <div class="job-meta">2023 - Present</div>
+                    <ul class="job-bullets">
+                        <li>Architected complex Monday.com workflows to synchronize Studio, Creative, and Media operations.</li>
+                        <li>Optimized multi-channel campaign lifecycles (Meta, Google, TikTok) utilizing MarTech integrations, GTM, and MMP tools.</li>
+                        <li>Executed end-to-end marketing initiatives and digital strategies focused on performance, engagement, and brand visibility.</li>
+                        <li>Scaled acquisition and retention efforts via data-driven insights and automated marketing processes.</li>
+                        <li>Deployed GenAI tools within creative production workflows to streamline Digital Asset Management and efficiency.</li>
+                    </ul>
+                </div>
+                <div class="job-entry">
+                    <div class="job-title">D-say Interactive - Supervisor</div>
+                    <div class="job-meta">2022 - 2023</div>
+                    <ul class="job-bullets">
+                        <li>Orchestrated multi-channel campaign lifecycles (Digital, TV, Radio, Billboards) to ensure operational alignment.</li>
+                        <li>Managed media plan execution focused on performance tracking, acquisition, and revenue optimization.</li>
+                        <li>Supervised a team of three, streamlining workflows and resource management for project efficiency.</li>
+                        <li>Synchronized cross-functional efforts between Creative and Media teams to maximize operational impact.</li>
+                    </ul>
+                </div>
+                <div class="job-entry">
+                    <div class="job-title">Havas Blink - Account Manager</div>
+                    <div class="job-meta">2020 - 2022</div>
+                    <ul class="job-bullets">
+                        <li>Managed end-to-end ad production and sponsored content workflows to ensure operational precision.</li>
+                        <li>Executed data-driven performance analysis and delivered strategic insights via QBRs (Quarterly Business Reviews).</li>
+                        <li>Optimized internal process workflows and daily operations to enhance service delivery and retention.</li>
+                        <li>Implemented scalable solutions and growth opportunities based on performance tracking and value analysis.</li>
+                    </ul>
+                </div>
+            `,
+            options: []
+        },
+        casestudy: {
+            text: "<b>Project: Automated Creative Performance Insights</b><br><br>" +
+                  "<b>The Goal:</b> To bridge the gap between raw data metrics and creative strategy.<br>" +
+                  "<b>The Difficulty:</b> Creative and marketing teams often struggled to translate raw data metrics into actionable creative recommendations manually.<br>" +
+                  "<b>The Solution:</b> Developed an AI-driven analysis system utilizing Gemini Gems to ingest and evaluate ad performance data, generating real-time actionable recommendations.<br>" +
+                  "<div class='roi-badge'>RESULT: 25% Increase in ROI and significant reduction in manual workload.</div>",
+            options: []
+        },
+        edu_mil: {
+            text: `
+                <b>Education:</b><br>
+                • <b>B.A. Communication Studies | College of Management</b> (2018–2021)<br>
+                <i>Majors: Digital marketing specialization.</i><br><br>
+                • <b>PPC Digital Marketing Course Certification | Duke Marketing</b> (2024)<br>
+                <i>Focus: Audience targeting, performance analysis, and budget optimization for Meta, TikTok, and Google Ads.</i><br><br>
+                <b>Military Service:</b><br>
+                • <b>Combat Medic | NAHAL Brigade</b> (2014–2017)<br>
+                <i>Demonstrated high responsibility, quick decision-making, and teamwork in high-pressure environments.</i>
+            `,
+            options: []
+        },
+        contact: {
+            text: "I'm always looking for my next challenge. Let's connect!",
+            options: [
+                { text: "LinkedIn", link: LINKS.linkedin },
+                { text: "Email", link: LINKS.email },
+                { text: "Call Me", link: LINKS.phone }
+            ]
+        }
+    };
+
+    function showTyping(callback) {
+        typingIndicator.style.display = 'block';
+        optionsContainer.innerHTML = '';
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        setTimeout(() => {
+            typingIndicator.style.display = 'none';
+            callback();
+        }, 1000);
+    }
+
+    function addMessage(text, type = 'bot-msg') {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `msg ${type}`;
+        msgDiv.innerHTML = text;
+        chatWindow.appendChild(msgDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function showOptions(key) {
+        const data = resumeData[key];
+        let options = [...data.options];
+        if (key !== 'start' && key !== 'contact') {
+            options.push({ text: "🔙 Back", next: "start" });
+            options.push({ text: "📞 Contact", next: "contact" });
+        } else if (key === 'contact') {
+            options.push({ text: "🔙 Main Menu", next: "start" });
+        }
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerHTML = opt.text;
+            if (opt.text.includes("Contact")) btn.className = 'contact-btn';
+            if (opt.text.includes("Back") || opt.text.includes("Menu")) btn.className = 'secondary';
+            if (opt.action === "download") btn.className = 'download-btn';
+            
+            btn.onclick = () => {
+                if (opt.action === "download") {
+                    window.open(LINKS.pdf_file, '_blank');
+                    return;
+                }
+                addMessage(opt.text, 'user-msg');
+                if (opt.link) {
+                    window.open(opt.link, '_blank');
+                } else {
+                    showTyping(() => {
+                        addMessage(resumeData[opt.next].text);
+                        showOptions(opt.next);
+                    });
+                }
+            };
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    window.onload = () => {
+        showTyping(() => {
+            addMessage(resumeData.start.text);
+            showOptions('start');
+        });
+    };
+</script>
+</body>
+</html>
